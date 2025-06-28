@@ -42,7 +42,7 @@ import car_image3 from "./car_image3.png"
 import car_image4 from "./car_image4.png"
 import autoXlogo from "./autoRentXLogo.png"
 
-export const cityList = ['New York', 'Los Angeles', 'Houston', 'Chicago']
+export const cityList = ['Mumbai', 'Goa', 'Delhi', 'Bangalore'];
 
 export const assets = {
     logo,
@@ -105,81 +105,85 @@ export const ownerMenuLinks = [
 
 export const dummyUserData = {
   "_id": "6847f7cab3d8daecdb517095",
-  "name": "GreatStack",
+  "name": "Srikant Sahu",
   "email": "admin@example.com",
   "role": "owner",
   "image": user_profile,
 }
 
 export const dummyCarData = [
-    {
-        "_id": "67ff5bc069c03d4e45f30b77",
-        "owner": "67fe3467ed8a8fe17d0ba6e2",
-        "brand": "BMW",
-        "model": "X5",
-        "image": car_image1,
-        "year": 2006,
-        "category": "SUV",
-        "seating_capacity": 4,
-        "fuel_type": "Hybrid",
-        "transmission": "Semi-Automatic",
-        "pricePerDay": 300,
-        "location": "New York",
-        "description": "The BMW X5 is a mid-size luxury SUV produced by BMW. The X5 made its debut in 1999 as the first SUV ever produced by BMW.",
-        "isAvaliable": true,
-        "createdAt": "2025-04-16T07:26:56.215Z",
-    },
-    {
-        "_id": "67ff6b758f1b3684286a2a65",
-        "owner": "67fe3467ed8a8fe17d0ba6e2",
-        "brand": "Toyota",
-        "model": "Corolla",
-        "image": car_image2,
-        "year": 2021,
-        "category": "Sedan",
-        "seating_capacity": 4,
-        "fuel_type": "Diesel",
-        "transmission": "Manual",
-        "pricePerDay": 130,
-        "location": "Chicago",
-        "description": "The Toyota Corolla is a mid-size luxury sedan produced by Toyota. The Corolla made its debut in 2008 as the first sedan ever produced by Toyota.",
-        "isAvaliable": true,
-        "createdAt": "2025-04-16T08:33:57.993Z",
-    },
-    {
-        "_id": "67ff6b9f8f1b3684286a2a68",
-        "owner": "67fe3467ed8a8fe17d0ba6e2",
-        "brand": "Jeep ",
-        "model": "Wrangler",
-        "image": car_image3,
-        "year": 2023,
-        "category": "SUV",
-        "seating_capacity": 4,
-        "fuel_type": "Hybrid",
-        "transmission": "Automatic",
-        "pricePerDay": 200,
-        "location": "Los Angeles",
-        "description": "The Jeep Wrangler is a mid-size luxury SUV produced by Jeep. The Wrangler made its debut in 2003 as the first SUV ever produced by Jeep.",
-        "isAvaliable": true,
-        "createdAt": "2025-04-16T08:34:39.592Z",
-    },
-    {
-        "_id": "68009c93a3f5fc6338ea7e34",
-        "owner": "67fe3467ed8a8fe17d0ba6e2",
-        "brand": "Ford",
-        "model": "Neo 6",
-        "image": car_image4,
-        "year": 2022,
-        "category": "Sedan",
-        "seating_capacity": 2,
-        "fuel_type": "Diesel",
-        "transmission": "Semi-Automatic",
-        "pricePerDay": 209,
-        "location": "Houston",
-        "description": "This is a mid-size luxury sedan produced by Toyota. The Corolla made its debut in 2008 as the first sedan ever produced by Toyota.",
-        "isAvaliable": true,
-        "createdAt": "2025-04-17T06:15:47.318Z",
-    }
+  {
+    _id: "667f2a38b9ad4d1c8f0c1a01",
+    owner: "667f1bd5e5c4fa3a7db9e450",
+    brand: "Tata",
+    model: "Harrier",
+    image: car_image1,
+    year: 2022,
+    category: "SUV",
+    seating_capacity: 5,
+    fuel_type: "Diesel",
+    transmission: "Manual",
+    pricePerDay: 2800,
+    location: "Mumbai",
+    description:
+      "Tata Harrier is a premium SUV with bold design and robust performance, ideal for both city drives and off-roading.",
+    isAvailable: true,
+    createdAt: "2025-04-16T07:26:56.215Z"
+  },
+  {
+    _id: "667f2a78b9ad4d1c8f0c1a02",
+    owner: "667f1bd5e5c4fa3a7db9e450",
+    brand: "Mahindra",
+    model: "Thar",
+    image: car_image2,
+    year: 2023,
+    category: "SUV",
+    seating_capacity: 4,
+    fuel_type: "Petrol",
+    transmission: "Manual",
+    pricePerDay: 3200,
+    location: "Goa",
+    description:
+      "Mahindra Thar is a rugged SUV perfect for adventure and off-road experiences. Iconic design and thrilling drive.",
+    isAvailable: true,
+    createdAt: "2025-04-16T08:33:57.993Z"
+  },
+  {
+    _id: "667f2ab1b9ad4d1c8f0c1a03",
+    owner: "667f1bd5e5c4fa3a7db9e450",
+    brand: "Maruti Suzuki",
+    model: "Dzire",
+    image: car_image3,
+    year: 2021,
+    category: "Sedan",
+    seating_capacity: 5,
+    fuel_type: "Petrol",
+    transmission: "Automatic",
+    pricePerDay: 1500,
+    location: "Delhi",
+    description:
+      "Maruti Dzire is a compact and fuel-efficient sedan, great for city commutes and daily travel with comfort.",
+    isAvailable: true,
+    createdAt: "2025-04-16T08:34:39.592Z"
+  },
+  {
+    _id: "667f2af3b9ad4d1c8f0c1a04",
+    owner: "667f1bd5e5c4fa3a7db9e450",
+    brand: "Hyundai",
+    model: "Creta",
+    image: car_image4,
+    year: 2022,
+    category: "SUV",
+    seating_capacity: 5,
+    fuel_type: "Diesel",
+    transmission: "Automatic",
+    pricePerDay: 2600,
+    location: "Bangalore",
+    description:
+      "Hyundai Creta is a versatile SUV with premium features, perfect for family travel and city rides.",
+    isAvailable: true,
+    createdAt: "2025-04-17T06:15:47.318Z"
+  }
 ];
 
 export const dummyMyBookingsData = [
