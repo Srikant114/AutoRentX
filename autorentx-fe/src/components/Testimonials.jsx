@@ -36,7 +36,7 @@ const Testimonial = () => {
   ];
 
   return (
-    <div className="py-28 px-6 md:px-16 lg:px-24 xl:px-44 bg-light">
+    <div className="py-28 px-6 md:px-16 lg:px-24 xl:px-44 ">
       {/* ---------- Section Title ---------- */}
       <Title
         title="What Our Customers Say"
