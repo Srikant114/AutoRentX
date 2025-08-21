@@ -10,7 +10,7 @@ const NavbarOwner = () => {
     <div className="flex items-center justify-between px-6 md:px-10 py-4 text-[var(--color-text-secondary)] border-b border-[var(--color-borderColor)] relative transition-all">
       {/* Logo - Navigates to Home */}
       <Link to="/">
-        <img src={assets.logo} alt="AutoRentX Logo" className="h-7" />
+         <img src={assets?.autoXlogo} alt="AutoRentX Logo" className="h-8" />
       </Link>
 
       {/* Welcome Text */}
