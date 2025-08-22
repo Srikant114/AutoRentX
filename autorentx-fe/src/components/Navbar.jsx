@@ -1,11 +1,29 @@
 import React, { useState } from "react";
 import { assets, menuLinks } from "../assets/assets";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
-const Navbar = ({ setShowLogin }) => {
+const Navbar = () => {
+  const {setShowLogin, user, logout, isOwner, axios, setIsOwner} = useAppContext()
   const location = useLocation(); // current route
   const navigate = useNavigate();
   const [open, setOpen] = useState(false); // mobile menu state
+
+  const changeRole = async ()=>{
+    try {
+    const res = await axios.post("/api/owner/change-role"); 
+
+    if (res.status === 200 && res.data?.success) {
+      setIsOwner(true);
+      toast.success(res.data.message || "Role updated successfully");
+    } else {
+      toast.error(res.data?.message || "Something went wrong");
+    }
+  } catch (error) {
+    toast.error(error?.response?.data?.message || error.message || "Request failed");
+  }
+}
 
   return (
     <div
@@ -55,18 +73,18 @@ const Navbar = ({ setShowLogin }) => {
           <button
             className="cursor-pointer"
             onClick={() => {
-              navigate("/owner");
+             isOwner ? navigate("/owner") : changeRole();
             }}
           >
-            Dashboard
+            {isOwner ? 'Dashboard' : 'List Cars'}
           </button>
           <button
             className="cursor-pointer px-8 py-2 bg-primary hover:bg-primary-dull transition-all text-white rounded-lg"
             onClick={() => {
-              setShowLogin(true);
+             user ? logout() : setShowLogin(true);
             }}
           >
-            Login
+            {user ?'Logout':'Login'}
           </button>
         </div>
       </div>

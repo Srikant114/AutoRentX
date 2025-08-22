@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { toast } from "react-hot-toast";
+import { useAppContext } from "../context/AppContext";
 
 /* Related data: field placeholders */
 const PLACEHOLDERS = {
@@ -7,16 +9,62 @@ const PLACEHOLDERS = {
   password: "Enter your password",
 };
 
-const Login = ({ setShowLogin }) => {
-  // local form state (simple)
-  const [state, setState] = useState("login"); // "login" | "register"
+const Login = () => {
+  const { setShowLogin, axios, setToken, navigate } = useAppContext();
+
+  // "login" | "register"
+  const [state, setState] = useState("login"); // default to register in your screenshot
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  // submit handler (kept minimal)
-  const onSubmitHandler = (e) => {
+  const getErrMsg = (err) =>
+    err?.response?.data?.message || err?.message || "Request failed";
+
+  const onSubmitHandler = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+
+    try {
+      if (state === "register") {
+        // Register
+        const res = await axios.post("/api/user/register", { name, email, password });
+        const ok = (res.status === 201 || res.status === 200) && res.data?.success;
+
+        if (!ok) {
+          toast.error(res.data?.message || "Registration failed");
+        } else {
+          // Show success, switch to login, keep modal open
+          toast.success(res.data?.message || "Registration successful.");
+          setState("login");
+          // clear only password so they can re-enter for login
+          setPassword("");
+        }
+      } else {
+        // Login
+        const res = await axios.post("/api/user/login", { email, password });
+        const ok = (res.status === 200 || res.status === 201) && res.data?.success;
+
+        if (!ok) {
+          toast.error(res.data?.message || "Login failed");
+        } else {
+          const token = res.data?.token;
+          if (token) {
+            localStorage.setItem("token", token);
+            setToken(token);
+          }
+          toast.success(res.data?.message || "Login successful.");
+          setShowLogin(false);        // close modal after login
+          navigate("/");              // go home (optional)
+        }
+      }
+    } catch (err) {
+      toast.error(getErrMsg(err));     // shows 409 “User already exists.” etc.
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -103,10 +151,13 @@ const Login = ({ setShowLogin }) => {
 
         {/* Submit */}
         <button
-          className="bg-[var(--color-primary)] hover:opacity-90 transition-all text-white w-full py-2 rounded-md cursor-pointer"
+          className="bg-[var(--color-primary)] hover:opacity-90 transition-all text-white w-full py-2 rounded-md cursor-pointer disabled:opacity-60"
           type="submit"
+          disabled={submitting}
         >
-          {state === "register" ? "Create Account" : "Login"}
+          {submitting
+            ? state === "register" ? "Creating..." : "Logging in..."
+            : state === "register" ? "Create Account" : "Login"}
         </button>
       </form>
     </div>
