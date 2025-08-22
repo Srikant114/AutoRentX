@@ -249,7 +249,9 @@ export const getDashboardData = async (req, res) => {
   }
 };
 
-
+/* ================================
+   Update Image → Owner
+   ================================ */
 export const updateUserImage = async (req, res) => {
   let tempFilePath = null;
 

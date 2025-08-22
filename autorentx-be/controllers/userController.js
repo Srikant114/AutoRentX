@@ -2,6 +2,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import Car from "../models/Car.js";
 
 /* ================================
    Small related data (constants)
@@ -19,7 +20,8 @@ const generateToken = (userId) => {
 
 // Basic field validation (minimal & readable)
 const isValidEmail = (email = "") => /\S+@\S+\.\S+/.test(email);
-const isValidPassword = (pwd = "") => typeof pwd === "string" && pwd.length >= 8;
+const isValidPassword = (pwd = "") =>
+  typeof pwd === "string" && pwd.length >= 8;
 
 /* ================================
    Register User
@@ -127,7 +129,6 @@ export const loginUser = async (req, res) => {
   }
 };
 
-
 /* ================================
    Get User Data (Profile)
    ================================ */
@@ -145,6 +146,18 @@ export const getUserData = async (req, res) => {
     return res.status(200).json({ success: true, user });
   } catch (error) {
     console.log("GetUserData Error:", error.message);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error." });
+  }
+};
+
+export const getCars = async (req, res) => {
+  try {
+    const cars = await Car.find({ isAvailable: true });
+    return res.status(200).json({ success: true, cars });
+  } catch (error) {
+    console.log("GetCars Error:", error.message);
     return res
       .status(500)
       .json({ success: false, message: "Internal server error." });
