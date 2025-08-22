@@ -39,12 +39,8 @@ export const changeRoleToOwner = async (req, res) => {
     }
 };
 
-
 /* ================================
    List Your Car (Add Car)
-   - Expects multipart/form-data with:
-     - carData: JSON string of car fields
-     - file: image file (handled by multer as req.file)
    ================================ */
 export const addCar = async (req, res) => {
   let tempFilePath = null;
@@ -103,3 +99,119 @@ export const addCar = async (req, res) => {
     }
   }
 };
+
+/* ================================
+   Get Car Details → Owner
+   ================================ */
+export const getOwnerCars = async (req, res) => {
+  try {
+    const { _id } = req.user; // user id from auth middleware
+
+    // Fetch all cars owned by this user
+    const cars = await Car.find({ owner: _id });
+
+    return res.status(200).json({
+      success: true,
+      count: cars.length,
+      cars,
+    });
+  } catch (error) {
+    console.log("GetOwnerCars Error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error.",
+    });
+  }
+};
+
+/* ================================
+   Toggle Avaibility → Owner
+   ================================ */
+export const toggleCarAvailability = async (req, res) => {
+  try {
+    const { _id } = req.user;
+    const { carId } = req.body;
+
+    // Validate input
+    if (!carId) {
+      return res.status(400).json({ success: false, message: "carId is required." });
+    }
+
+    // Find car
+    const car = await Car.findById(carId);
+    if (!car) {
+      return res.status(404).json({ success: false, message: "Car not found." });
+    }
+
+    // Ensure the car belongs to the requesting user
+    if (car.owner.toString() !== _id.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized." });
+    }
+
+    // Toggle availability
+    car.isAvailable = !car.isAvailable;
+    await car.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `Car is now ${car.isAvailable ? "available" : "unavailable"}.`,
+      isAvailable: car.isAvailable,
+    });
+  } catch (error) {
+    console.log("ToggleCarAvailability Error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal server error." });
+  }
+};
+
+/* ================================
+   Delete Car → Owner
+   ================================ */
+export const deleteCar = async (req, res) => {
+  try {
+    const { _id } = req.user;   // from auth middleware
+    const { carId } = req.body; // expects { carId }
+
+    // Validate input
+    if (!carId) {
+      return res.status(400).json({ success: false, message: "carId is required." });
+    }
+
+    // Find the car
+    const car = await Car.findById(carId);
+    if (!car) {
+      return res.status(404).json({ success: false, message: "Car not found." });
+    }
+
+    // Ownership check
+    if (car.owner.toString() !== _id.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized." });
+    }
+
+    // Delete the car document
+    await Car.deleteOne({ _id: carId });
+
+    return res.status(200).json({
+      success: true,
+      message: "Car deleted successfully.",
+      deletedId: carId,
+    });
+  } catch (error) {
+    console.log("DeleteCar Error:", error.message);
+    return res.status(500).json({ success: false, message: "Internal server error." });
+  }
+};
+
+// const getDashboarddata = async (req,res)=>{
+//     try {
+//         const {_id, role} = req.user
+
+//         if(role !== 'owner'){
+//             return res.json({success:false, message:'Unauthorize'})
+//         }
+//         const cars = await Car.find({owner: _id})
+//     } catch (error) {
+//         console.log(error.message)
+//         res.json({success: false, message: "Internal server error."})
+//     }
+// }
+
