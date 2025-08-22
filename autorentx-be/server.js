@@ -4,6 +4,8 @@ import "dotenv/config";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import userRouter from "./route/userRoutes.js";
+import { logger } from "./middleware/logger.js";
+import ownerRouter from "./route/ownerRoute.js";
 
 
 //    Related data (simple constants)
@@ -11,6 +13,8 @@ const APP_NAME = "AutoRentX API"; // keep logs consistent with your project name
 
 //    Initialize Express app
 const app = express();
+
+app.use(logger);
 
 //    Connect to Database (MongoDB)
 await connectDB();
@@ -22,6 +26,7 @@ app.use(express.json());    // parse JSON request bodies
 //    Health / Root Route
 app.get("/", (req, res) => res.send(`${APP_NAME} • Server is running`));
 app.use('/api/user', userRouter)
+app.use('/api/owner', ownerRouter)
 
 //    Start Server
 const PORT = Number(process.env.PORT) || 3000;
