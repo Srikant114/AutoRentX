@@ -6,6 +6,7 @@ import connectDB from "./config/db.js";
 import userRouter from "./route/userRoutes.js";
 import { logger } from "./middleware/logger.js";
 import ownerRouter from "./route/ownerRoute.js";
+import bookingRouter from "./route/bookingRoute.js";
 
 
 //    Related data (simple constants)
@@ -27,6 +28,7 @@ app.use(express.json());    // parse JSON request bodies
 app.get("/", (req, res) => res.send(`${APP_NAME} • Server is running`));
 app.use('/api/user', userRouter)
 app.use('/api/owner', ownerRouter)
+app.use('/api/bookings', bookingRouter)
 
 //    Start Server
 const PORT = Number(process.env.PORT) || 3000;
