@@ -1,4 +1,5 @@
 import imageKit from "../config/imageKit.js";
+import Booking from "../models/Booking.js";
 import Car from "../models/Car.js";
 import User from "../models/User.js";
 import fs from "fs/promises"; // <-- use promises API
@@ -201,17 +202,118 @@ export const deleteCar = async (req, res) => {
   }
 };
 
-// const getDashboarddata = async (req,res)=>{
-//     try {
-//         const {_id, role} = req.user
 
-//         if(role !== 'owner'){
-//             return res.json({success:false, message:'Unauthorize'})
-//         }
-//         const cars = await Car.find({owner: _id})
-//     } catch (error) {
-//         console.log(error.message)
-//         res.json({success: false, message: "Internal server error."})
-//     }
-// }
+/* ================================
+   Dashboard Data → Owner
+   ================================ */
+export const getDashboardData = async (req, res) => {
+  try {
+    const { _id, role } = req.user;
+
+    if (role !== "owner") {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    // Fetch cars and bookings
+    const cars = await Car.find({ owner: _id });
+    const bookings = await Booking.find({ owner: _id })
+      .populate("car")
+      .sort({ createdAt: -1 });
+
+    // Count statuses
+    const pendingBookings = bookings.filter(b => b.status === "pending");
+    const confirmedBookings = bookings.filter(b => b.status === "confirmed");
+
+    // Calculate revenue from confirmed bookings
+    const monthlyRevenue = confirmedBookings.reduce((sum, b) => sum + b.price, 0);
+
+    const dashboardData = {
+      totalCars: cars.length,
+      totalBookings: bookings.length,
+      pendingBookings: pendingBookings.length,
+      completedBookings: confirmedBookings.length,
+      recentBookings: bookings.slice(0, 3),
+      monthlyRevenue,
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: "Dashboard data fetched successfully",
+      dashboardData,
+    });
+  } catch (error) {
+    console.log("GetDashboardData Error:", error.message);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
+};
+
+
+export const updateUserImage = async (req, res) => {
+  let tempFilePath = null;
+
+  try {
+    const { _id } = req.user;
+
+    // Validate file
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Image file is required.",
+      });
+    }
+
+    const imageFile = req.file;
+    tempFilePath = imageFile.path;
+
+    // Read uploaded file
+    const fileBuffer = await fs.readFile(tempFilePath);
+
+    // Upload to ImageKit (wrap callback for Promise)
+    const uploadRes = await new Promise((resolve, reject) => {
+      imageKit.upload(
+        {
+          file: fileBuffer,
+          fileName: imageFile.originalname,
+          folder: "/users",
+        },
+        (err, result) => (err ? reject(err) : resolve(result))
+      );
+    });
+
+    // Build optimized URL
+    const optimizedImageURL = imageKit.url({
+      path: uploadRes.filePath,
+      transformation: [
+        { width: 400 },
+        { quality: "auto" },
+        { format: "webp" },
+      ],
+    });
+
+    // Update user document
+    await User.findByIdAndUpdate(_id, { image: optimizedImageURL });
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile image updated successfully.",
+      image: optimizedImageURL,
+    });
+  } catch (error) {
+    console.log("UpdateUserImage Error:", error.message);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error." });
+  } finally {
+    // Clean up temporary file if exists
+    if (tempFilePath) {
+      try {
+        await fs.unlink(tempFilePath);
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+  }
+};
 
