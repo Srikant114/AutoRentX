@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import Title from "../../components/owner/Title";
 import { assets, dummyDashboardData } from "../../assets/assets";
+import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 const Dashboard = () => {
-  // Currency symbol (from env)
-  const currency = import.meta.env.VITE_CURRENCY;
+  const { axios, isOwner, currency } = useAppContext();
 
   // Dashboard state
   const [data, setData] = useState({
@@ -40,10 +41,43 @@ const Dashboard = () => {
     },
   ];
 
-  // Load dummy data on mount
+  const fetchDashboardData = async () => {
+    try {
+      const res = await axios.get("/api/owner/dashboard");
+
+      if (!res.status === 200 && res.data?.success === true) {
+        toast.error(res.data?.message || "Failed to fetch dashboard data.");
+        return false;
+      }
+
+      setData(res.data.dashboardData);
+      return true;
+    } catch (err) {
+      if (err?.response?.status === 401) {
+        toast.error(
+          err?.response?.data?.message || "Not authorized. Please log in."
+        );
+      } else if (err?.response?.status === 403) {
+        toast.error(
+          err?.response?.data?.message ||
+            "Access denied. Owner account required."
+        );
+      } else {
+        toast.error(
+          err?.response?.data?.message ||
+            err.message ||
+            "Failed to fetch dashboard data."
+        );
+      }
+      return false;
+    }
+  };
+
   useEffect(() => {
-    setData(dummyDashboardData);
-  }, []);
+    if (isOwner) {
+      fetchDashboardData();
+    }
+  }, [isOwner]);
 
   return (
     <div className="px-4 pt-10 md:px-10 flex-1">
@@ -72,7 +106,11 @@ const Dashboard = () => {
 
             {/* Card Icon */}
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[var(--color-primary)]/10">
-              <img src={card?.icon} alt={`${card?.title} Icon`} className="h-4 w-4" />
+              <img
+                src={card?.icon}
+                alt={`${card?.title} Icon`}
+                className="h-4 w-4"
+              />
             </div>
           </div>
         ))}
@@ -90,10 +128,7 @@ const Dashboard = () => {
           </p>
 
           {data?.recentBookings?.map((booking, index) => (
-            <div
-              key={index}
-              className="mt-4 flex items-center justify-between"
-            >
+            <div key={index} className="mt-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {/* Icon Circle */}
                 <div className="hidden md:flex items-center justify-center w-12 h-12 rounded-full bg-[var(--color-primary)]/10">
