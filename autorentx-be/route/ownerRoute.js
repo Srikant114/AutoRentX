@@ -11,7 +11,7 @@ ownerRouter.post('/cars', protect, getOwnerCars)
 ownerRouter.post('/toggle-availability', protect, toggleCarAvailability)
 ownerRouter.post('/delete-car', protect, deleteCar)
 
-ownerRouter.post('/dashboard', protect, getDashboardData)
+ownerRouter.get('/dashboard', protect, getDashboardData)
 ownerRouter.post('/update-image', protect, upload.single('image'), updateUserImage)
 
 export default ownerRouter
