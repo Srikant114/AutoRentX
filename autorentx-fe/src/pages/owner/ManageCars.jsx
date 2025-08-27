@@ -1,22 +1,95 @@
 import React, { useEffect, useState } from "react";
-import { assets, dummyCarData } from "../../assets/assets";
+import { assets } from "../../assets/assets";
 import Title from "../../components/owner/Title";
+import { useAppContext } from "../../context/AppContext";
+import toast from "react-hot-toast";
 
 const ManageCars = () => {
-  // Currency symbol (from env)
-  const currency = import.meta.env.VITE_CURRENCY;
+  const { isOwner, axios, currency } = useAppContext();
 
-  // Local state for owner's cars
   const [cars, setCars] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [togglingId, setTogglingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
-  // Load cars (dummy data for now)
+  // delete confirmation modal state
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmCar, setConfirmCar] = useState(null);
+
+  const errMsg = (err) =>
+    err?.response?.data?.message || err?.message || "Request failed";
+
   const fetchOwnerCars = async () => {
-    setCars(dummyCarData);
+    if (loading) return;
+    setLoading(true);
+    try {
+      const res = await axios.get("/api/owner/cars");
+      const ok = res.status === 200 && res.data?.success;
+      if (!ok) {
+        toast.error(res.data?.message || "Failed to fetch cars.");
+        return;
+      }
+      setCars(res.data.cars || []);
+    } catch (error) {
+      toast.error(errMsg(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleAvailability = async (carId) => {
+    if (togglingId) return;
+    setTogglingId(carId);
+    try {
+      const res = await axios.post("/api/owner/toggle-availability", { carId });
+      const ok = res.status === 200 && res.data?.success;
+      if (!ok) {
+        toast.error(res.data?.message || "Failed to update availability.");
+        return;
+      }
+      toast.success(res.data?.message || "Availability updated.");
+      fetchOwnerCars();
+    } catch (error) {
+      toast.error(errMsg(error));
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  // open confirmation popup
+  const askDelete = (car) => {
+    setConfirmCar(car);
+    setConfirmOpen(true);
+  };
+
+  // execute delete after confirm
+  const confirmDelete = async () => {
+    if (!confirmCar?._id || deletingId) return;
+    setDeletingId(confirmCar._id);
+    try {
+      const res = await axios.post("/api/owner/delete-car", {
+        carId: confirmCar._id,
+      });
+      const ok = res.status === 200 && res.data?.success;
+      if (!ok) {
+        toast.error(res.data?.message || "Failed to delete car.");
+        return;
+      }
+      toast.success(res.data?.message || "Car deleted successfully.");
+      setConfirmOpen(false);
+      setConfirmCar(null);
+      fetchOwnerCars();
+    } catch (error) {
+      toast.error(errMsg(error));
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   useEffect(() => {
-    fetchOwnerCars();
-  }, []);
+    isOwner && fetchOwnerCars();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwner]);
 
   return (
     <div className="px-4 pt-10 md:px-10 w-full">
@@ -40,8 +113,8 @@ const ManageCars = () => {
           </thead>
 
           <tbody>
-            {cars?.map((car, index) => (
-              <tr key={index} className="border-t border-[var(--color-borderColor)]">
+            {cars?.map((car) => (
+              <tr key={car._id} className="border-t border-[var(--color-borderColor)]">
                 {/* Car image + basic info */}
                 <td className="p-3 flex items-center gap-3">
                   <img
@@ -81,26 +154,79 @@ const ManageCars = () => {
                   </span>
                 </td>
 
-                {/* Actions (icons only, no extra behavior) */}
+                {/* Actions */}
                 <td className="p-3">
                   <div className="flex items-center gap-3">
                     <img
-                      src={car.isAvailable ? assets.eye_close_icon : assets.eye_icon}
+                      onClick={() => toggleAvailability(car._id)}
+                      src={
+                        car.isAvailable ? assets.eye_close_icon : assets.eye_icon
+                      }
                       alt="Toggle Visibility"
-                      className="cursor-pointer"
+                      className={`cursor-pointer ${
+                        togglingId === car._id ? "opacity-60 pointer-events-none" : ""
+                      }`}
+                      title="Toggle availability"
                     />
                     <img
+                      onClick={() => askDelete(car)}
                       src={assets.delete_icon}
                       alt="Delete"
                       className="cursor-pointer"
+                      title="Delete car"
                     />
                   </div>
                 </td>
               </tr>
             ))}
+
+            {!cars?.length && (
+              <tr>
+                <td className="p-4 text-center text-[var(--color-text-secondary)]" colSpan={5}>
+                  {loading ? "Loading cars..." : "No cars found."}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Simple Confirmation Modal (no styling changes to table; minimal popup) */}
+      {confirmOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
+          <div className="bg-white border border-[var(--color-borderColor)] rounded-md p-6 w-[90%] max-w-sm text-[var(--color-text-secondary)]">
+            <h3 className="text-lg font-medium text-[var(--color-text-primary)]">
+              Confirm Delete
+            </h3>
+            <p className="mt-2">
+              Are you sure you want to delete{" "}
+              <span className="font-medium">
+                {confirmCar?.brand} {confirmCar?.model}
+              </span>
+              ?
+            </p>
+
+            <div className="mt-5 flex items-center justify-end gap-3">
+              <button
+                onClick={() => {
+                  setConfirmOpen(false);
+                  setConfirmCar(null);
+                }}
+                className="px-4 py-2 rounded-md border border-[var(--color-borderColor)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={!!deletingId}
+                className="px-4 py-2 rounded-md bg-[var(--color-error)] text-white disabled:opacity-60"
+              >
+                {deletingId ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
