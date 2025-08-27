@@ -1,24 +1,73 @@
 import React, { useEffect, useState } from "react";
 import Title from "../../components/owner/Title";
-import { dummyMyBookingsData } from "../../assets/assets";
+import { useAppContext } from "./../../context/AppContext";
+import toast from "react-hot-toast";
 
-/* Related data: simple status options for the pending select */
+/* Simple status options for pending select */
 const BOOKING_STATUS_OPTIONS = ["pending", "cancelled", "confirmed"];
 
 const ManageBookings = () => {
-  // Currency symbol (from env)
-  const currency = import.meta.env.VITE_CURRENCY;
+  const { axios, currency } = useAppContext();
 
-  // Local state for bookings
   const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [savingId, setSavingId] = useState(null);
 
-  // Load bookings (dummy data)
+  const errMsg = (err) =>
+    err?.response?.data?.message || err?.message || "Request failed";
+
+  // Fetch owner bookings
   const fetchOwnerBookings = async () => {
-    setBookings(dummyMyBookingsData);
+    if (loading) return;
+    setLoading(true);
+    try {
+      const res = await axios.get("/api/booking/owner");
+      const ok = res.status === 200 && res.data?.success;
+      if (!ok) {
+        toast.error(res.data?.message || "Failed to fetch bookings.");
+        return;
+      }
+      setBookings(res.data.bookings || []);
+    } catch (error) {
+      toast.error(errMsg(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Change booking status
+  const changeBookingStatus = async (bookingId, status) => {
+    if (savingId) return;
+    setSavingId(bookingId);
+    try {
+      // Backend expects body => use PATCH with JSON
+      const res = await axios.patch("/api/booking/change-status", {
+        bookingId,
+        status,
+      });
+      const ok = res.status === 200 && res.data?.success;
+      if (!ok) {
+        toast.error(res.data?.message || "Failed to update status.");
+        return;
+      }
+      toast.success(res.data?.message || "Status updated.");
+
+      // Optimistic update (avoid full refetch)
+      setBookings((prev) =>
+        prev.map((b) =>
+          b._id === bookingId ? { ...b, status } : b
+        )
+      );
+    } catch (error) {
+      toast.error(errMsg(error));
+    } finally {
+      setSavingId(null);
+    }
   };
 
   useEffect(() => {
     fetchOwnerBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -43,13 +92,18 @@ const ManageBookings = () => {
           </thead>
 
           <tbody>
-            {bookings?.map((booking, index) => {
-              const fromDate = booking?.pickupDate?.split("T")[0] || "";
-              const toDate = booking?.returnDate?.split("T")[0] || "";
+            {bookings?.map((booking) => {
+              const fromDate =
+                (booking?.pickupDate && String(booking.pickupDate).split("T")[0]) || "";
+              const toDate =
+                (booking?.returnDate && String(booking.returnDate).split("T")[0]) || "";
               const carTitle = `${booking?.car?.brand || ""} ${booking?.car?.model || ""}`.trim();
 
               return (
-                <tr key={index} className="border-t border-[var(--color-borderColor)]">
+                <tr
+                  key={booking._id}
+                  className="border-t border-[var(--color-borderColor)]"
+                >
                   {/* Car image + basic info */}
                   <td className="p-3 flex items-center gap-3">
                     <img
@@ -59,7 +113,7 @@ const ManageBookings = () => {
                     />
                     <div className="max-md:hidden">
                       <p className="font-medium text-[var(--color-text-primary)]">
-                        {carTitle}
+                        {carTitle || "Car"}
                       </p>
                     </div>
                   </td>
@@ -75,7 +129,7 @@ const ManageBookings = () => {
                     {booking?.price}
                   </td>
 
-                  {/* Channel/Mode (static display; hidden on small screens) */}
+                  {/* Static channel badge (hidden on small screens) */}
                   <td className="p-3 max-md:hidden">
                     <span className="bg-[var(--color-light)] px-3 py-1 rounded-full text-xs">
                       offline
@@ -85,9 +139,12 @@ const ManageBookings = () => {
                   {/* Actions / Status control */}
                   <td className="p-3">
                     {booking?.status === "pending" ? (
-                      /* Simple select (no extra behavior wired) */
                       <select
+                        onChange={(e) =>
+                          changeBookingStatus(booking._id, e.target.value)
+                        }
                         value={booking?.status}
+                        disabled={savingId === booking._id}
                         className="px-2 py-1.5 mt-1 text-[var(--color-text-secondary)] border border-[var(--color-borderColor)] rounded-md outline-none"
                       >
                         {BOOKING_STATUS_OPTIONS.map((s) => (
@@ -97,7 +154,6 @@ const ManageBookings = () => {
                         ))}
                       </select>
                     ) : (
-                      /* Status pill (theme colors) */
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           booking?.status === "confirmed"
@@ -112,6 +168,14 @@ const ManageBookings = () => {
                 </tr>
               );
             })}
+
+            {!bookings?.length && (
+              <tr>
+                <td className="p-4 text-center" colSpan={5}>
+                  {loading ? "Loading bookings..." : "No bookings found."}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
