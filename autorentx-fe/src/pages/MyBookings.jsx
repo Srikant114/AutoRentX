@@ -1,22 +1,51 @@
 import React, { useEffect, useState } from "react";
 import Title from "../components/Title";
-import { assets, dummyMyBookingsData } from "../assets/assets";
+import { assets } from "../assets/assets";
+import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
 const MyBookings = () => {
+
+  /* 📌 Helper: Convert ISO date → dd-mm-yyyy */
+const formatToIndianDate = (isoDate) => {
+  if (!isoDate) return "";
+  const date = new Date(isoDate);
+  if (isNaN(date)) return "";
+  return date.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+  const {axios, currency , user} = useAppContext()
+
   // State to store user bookings
   const [bookings, setBookings] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-  // Currency symbol from environment variable
-  const currency = import.meta.env.VITE_CURRENCY;
 
-  // Fetch bookings (dummy data for now)
+  /* Fetch User Bookings */
   const fetchMyBookings = async () => {
-    setBookings(dummyMyBookingsData);
+    try {
+      setLoading(true);
+      const { data } = await axios.get("/api/bookings/user");
+      if (data.success) {
+        setBookings(data.bookings);
+      } else {
+        toast.error(data.message || "Failed to load bookings.");
+      }
+    } catch (error) {
+      console.error("FetchBookings Error:", error.message);
+      toast.error(error.response?.data?.message || "Server error occurred.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchMyBookings();
-  }, []);
+    if (user) fetchMyBookings();
+  }, [user]);
 
   return (
     <div className="px-6 md:px-16 lg:px-24 xl:px-32 2xl:px-48 mt-16 text-sm max-w-7xl">
@@ -27,9 +56,19 @@ const MyBookings = () => {
         align="left"
       />
 
+        {/* Loader */}
+      {loading && <p className="mt-10 text-center">Loading your bookings...</p>}
+
+      {/* Booking List */}
+      {!loading && bookings.length === 0 && (
+        <p className="mt-10 text-center text-gray-500">No bookings found.</p>
+      )}
+
+
       {/* Booking List */}
       <div>
-        {bookings?.map((booking, index) => (
+
+        {!loading && bookings?.map((booking, index) => (
           <div
             key={index}
             className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6 border border-[var(--color-borderColor)] rounded-lg mt-5 first:mt-12"
@@ -82,8 +121,8 @@ const MyBookings = () => {
                     Rental Period
                   </p>
                   <p>
-                    {booking?.pickupDate?.split("T")[0]} To{" "}
-                    {booking?.returnDate?.split("T")[0]}
+                     {formatToIndianDate(booking?.pickupDate)} →{" "}
+                    {formatToIndianDate(booking?.returnDate)}
                   </p>
                 </div>
               </div>
@@ -113,7 +152,7 @@ const MyBookings = () => {
                   {booking?.price}
                 </h1>
                 <p>
-                  Booked on {booking?.createdAt?.split("T")[0]}
+                  Booked on {formatToIndianDate(booking?.createdAt)}
                 </p>
               </div>
             </div>
