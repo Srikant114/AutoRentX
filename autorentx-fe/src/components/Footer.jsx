@@ -8,8 +8,18 @@ const Footer = () => {
 
   // Scroll to top + navigate
   const handleNavigation = (path) => {
+     if (path === "/list-car") {
+    navigate("/"); // go to home
+    setTimeout(() => {
+      const el = document.getElementById("list-your-car");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" }); 
+      }
+    }, 300); // small delay to ensure home page rendered
+  } else {
     navigate(path);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
   };
 
   return (
