@@ -2,23 +2,53 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { assets, dummyCarData } from "../assets/assets";
 import Loader from "../components/Loader";
+import { useAppContext } from "../context/AppContext";
+import toast from "react-hot-toast";
 
 const CarDetails = () => {
   const { id } = useParams();
+  const {cars, axios, pickupDate, setPickupDate, returnDate, setReturnDate, currency} = useAppContext()
+
   const navigate = useNavigate();
   const [carData, setCarData] = useState(null);
-  const currency = import.meta.env.VITE_CURRENCY;
 
-  // Handle form submit (can be replaced by API call later)
+    /* ------------------ Submit Booking ------------------ */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Car Is Booked !!!");
+
+    if (!pickupDate || !returnDate) {
+      toast.error("Please select both pickup and return dates.");
+      return;
+    }
+
+    if (new Date(returnDate) <= new Date(pickupDate)) {
+      toast.error("Return date must be after pickup date.");
+      return;
+    }
+
+    try {
+      const { data } = await axios.post("/api/bookings/create", {
+        car: id,
+        pickupDate,
+        returnDate,
+      });
+
+      if (data.success) {
+        toast.success("Booking created successfully!");
+        navigate("/my-bookings");
+      } else {
+        toast.error(data.message || "Booking failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Booking Error:", error.message);
+      toast.error(error.response?.data?.message || "Something went wrong.");
+    }
   };
 
-  // Find car data using ID from route param
+  /* ------------------ Fetch Car Data ------------------ */
   useEffect(() => {
-    setCarData(dummyCarData?.find((car) => car?._id === id));
-  }, [id]);
+    setCarData(cars?.find((car) => car?._id === id));
+  }, [cars, id]);
 
   // If no data, show loader
   if (!carData) return <Loader />;
@@ -137,6 +167,8 @@ const CarDetails = () => {
           <div className="flex flex-col gap-2">
             <label htmlFor="pickup-date">Pickup Date</label>
             <input
+              value={pickupDate}
+              onChange={(e)=>setPickupDate(e.target.value)}
               type="date"
               id="pickup-date"
               required
@@ -149,6 +181,8 @@ const CarDetails = () => {
           <div className="flex flex-col gap-2">
             <label htmlFor="return-date">Return Date</label>
             <input
+              value={returnDate}
+              onChange={(e)=>setReturnDate(e.target.value)}
               type="date"
               id="return-date"
               required
