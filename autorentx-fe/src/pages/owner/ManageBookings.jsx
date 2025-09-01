@@ -21,7 +21,7 @@ const ManageBookings = () => {
     if (loading) return;
     setLoading(true);
     try {
-      const res = await axios.get("/api/booking/owner");
+      const res = await axios.get("/api/bookings/owner");
       const ok = res.status === 200 && res.data?.success;
       if (!ok) {
         toast.error(res.data?.message || "Failed to fetch bookings.");
@@ -41,7 +41,7 @@ const ManageBookings = () => {
     setSavingId(bookingId);
     try {
       // Backend expects body => use PATCH with JSON
-      const res = await axios.patch("/api/booking/change-status", {
+      const res = await axios.post("/api/bookings/change-status", {
         bookingId,
         status,
       });
