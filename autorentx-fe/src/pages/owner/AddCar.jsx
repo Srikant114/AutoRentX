@@ -3,6 +3,8 @@ import Title from "../../components/owner/Title";
 import { assets } from "../../assets/assets";
 import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+import Loader from "../../components/Loader";
 
 /* Location options */
 const stateCapitals = [
@@ -46,6 +48,7 @@ const AddCar = () => {
 
   const [image, setImage] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(false);
 
   const [car, setCar] = useState({
     brand: "",
@@ -79,7 +82,6 @@ const AddCar = () => {
     const node = refs[key]?.current;
     if (node) {
       node.scrollIntoView({ behavior: "smooth", block: "center" });
-      // focus input inside (or the node itself)
       if (node.focus) node.focus();
       const input = node.querySelector?.("input, select, textarea");
       if (input) input.focus();
@@ -105,7 +107,6 @@ const AddCar = () => {
   const getErrMsg = (err) =>
     err?.response?.data?.message || err?.message || "Request failed";
 
-  // Simple client-side validation — returns { message, field }
   const validate = () => {
     if (!image) return { message: "Please upload a car image.", field: "image" };
     if (!image.type?.startsWith("image/"))
@@ -143,7 +144,7 @@ const AddCar = () => {
 
   const onSubmitHandler = async (e) => {
     e.preventDefault();
-    if (isLoading) return;
+    if (isLoading || pageLoading) return;
 
     const error = validate();
     if (error) {
@@ -153,6 +154,7 @@ const AddCar = () => {
     }
 
     setIsLoading(true);
+    setPageLoading(true);
     try {
       const formData = new FormData();
       formData.append("image", image);
@@ -178,21 +180,28 @@ const AddCar = () => {
 
       toast.success(res.data?.message || "Car added.");
       resetForm();
-      // optionally scroll back to top of form after success
       refs.image.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } catch (err) {
       toast.error(getErrMsg(err));
     } finally {
       setIsLoading(false);
+      setPageLoading(false);
     }
   };
 
   return (
-    <div className="px-4 pt-10 md:px-10 flex-1">
+    <motion.div
+      className="px-4 pt-10 md:px-10 flex-1"
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
       <Title
         title="Add New Car"
         subTitle="Fill in details to list a new car for booking, including pricing, availability, and car specifications"
       />
+
+      {pageLoading && <Loader />}
 
       <form
         onSubmit={onSubmitHandler}
@@ -386,7 +395,7 @@ const AddCar = () => {
           {isLoading ? "Listing..." : "List Your Car"}
         </button>
       </form>
-    </div>
+    </motion.div>
   );
 };
 

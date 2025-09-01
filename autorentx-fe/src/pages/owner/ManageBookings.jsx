@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import Title from "../../components/owner/Title";
 import { useAppContext } from "./../../context/AppContext";
 import toast from "react-hot-toast";
+import { motion } from "motion/react";
+import Loader from "../../components/Loader";
 
 /* Simple status options for pending select */
 const BOOKING_STATUS_OPTIONS = ["pending", "cancelled", "confirmed"];
@@ -40,7 +42,6 @@ const ManageBookings = () => {
     if (savingId) return;
     setSavingId(bookingId);
     try {
-      // Backend expects body => use PATCH with JSON
       const res = await axios.post("/api/bookings/change-status", {
         bookingId,
         status,
@@ -71,115 +72,143 @@ const ManageBookings = () => {
   }, []);
 
   return (
-    <div className="px-4 pt-10 md:px-10 w-full">
+    <motion.div
+      className="px-4 pt-10 md:px-10 w-full"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
       {/* Page Title */}
       <Title
         title="Manage Bookings"
         subTitle="Track all customer bookings, approve or cancel requests, and manage booking statuses"
       />
 
+      {/* Loader */}
+      {loading && (
+        <div className="flex items-center justify-center my-10">
+          <Loader />
+        </div>
+      )}
+
       {/* Bookings Table */}
-      <div className="max-w-3xl w-full rounded-md overflow-hidden border border-[var(--color-borderColor)]">
-        <table className="w-full border-collapse text-left text-sm text-[var(--color-text-secondary)]">
-          <thead className="text-[var(--color-text-secondary)]">
-            <tr>
-              <th className="p-3 font-medium">Car</th>
-              <th className="p-3 font-medium max-md:hidden">Date Range</th>
-              <th className="p-3 font-medium">Total</th>
-              <th className="p-3 font-medium max-md:hidden">Status</th>
-              <th className="p-3 font-medium">Actions</th>
-            </tr>
-          </thead>
+      {!loading && (
+        <motion.div
+          className="max-w-3xl w-full rounded-md overflow-hidden border border-[var(--color-borderColor)]"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <table className="w-full border-collapse text-left text-sm text-[var(--color-text-secondary)]">
+            <thead className="text-[var(--color-text-secondary)]">
+              <tr>
+                <th className="p-3 font-medium">Car</th>
+                <th className="p-3 font-medium max-md:hidden">Date Range</th>
+                <th className="p-3 font-medium">Total</th>
+                <th className="p-3 font-medium max-md:hidden">Status</th>
+                <th className="p-3 font-medium">Actions</th>
+              </tr>
+            </thead>
 
-          <tbody>
-            {bookings?.map((booking) => {
-              const fromDate =
-                (booking?.pickupDate && String(booking.pickupDate).split("T")[0]) || "";
-              const toDate =
-                (booking?.returnDate && String(booking.returnDate).split("T")[0]) || "";
-              const carTitle = `${booking?.car?.brand || ""} ${booking?.car?.model || ""}`.trim();
+            <tbody>
+              {bookings?.map((booking) => {
+                const fromDate =
+                  (booking?.pickupDate &&
+                    String(booking.pickupDate).split("T")[0]) ||
+                  "";
+                const toDate =
+                  (booking?.returnDate &&
+                    String(booking.returnDate).split("T")[0]) ||
+                  "";
+                const carTitle = `${booking?.car?.brand || ""} ${
+                  booking?.car?.model || ""
+                }`.trim();
 
-              return (
-                <tr
-                  key={booking._id}
-                  className="border-t border-[var(--color-borderColor)]"
-                >
-                  {/* Car image + basic info */}
-                  <td className="p-3 flex items-center gap-3">
-                    <img
-                      src={booking?.car?.image}
-                      alt={carTitle || "Car"}
-                      className="w-12 h-12 aspect-square rounded-md object-cover"
-                    />
-                    <div className="max-md:hidden">
-                      <p className="font-medium text-[var(--color-text-primary)]">
-                        {carTitle || "Car"}
-                      </p>
-                    </div>
-                  </td>
+                return (
+                  <motion.tr
+                    key={booking._id}
+                    className="border-t border-[var(--color-borderColor)]"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    {/* Car image + basic info */}
+                    <td className="p-3 flex items-center gap-3">
+                      <img
+                        src={booking?.car?.image}
+                        alt={carTitle || "Car"}
+                        className="w-12 h-12 aspect-square rounded-md object-cover"
+                      />
+                      <div className="max-md:hidden">
+                        <p className="font-medium text-[var(--color-text-primary)]">
+                          {carTitle || "Car"}
+                        </p>
+                      </div>
+                    </td>
 
-                  {/* Date Range (hidden on small screens) */}
-                  <td className="p-3 max-md:hidden">
-                    {fromDate} To {toDate}
-                  </td>
+                    {/* Date Range (hidden on small screens) */}
+                    <td className="p-3 max-md:hidden">
+                      {fromDate} To {toDate}
+                    </td>
 
-                  {/* Total Price */}
-                  <td className="p-3">
-                    {currency}
-                    {booking?.price}
-                  </td>
+                    {/* Total Price */}
+                    <td className="p-3">
+                      {currency}
+                      {booking?.price}
+                    </td>
 
-                  {/* Static channel badge (hidden on small screens) */}
-                  <td className="p-3 max-md:hidden">
-                    <span className="bg-[var(--color-light)] px-3 py-1 rounded-full text-xs">
-                      offline
-                    </span>
-                  </td>
-
-                  {/* Actions / Status control */}
-                  <td className="p-3">
-                    {booking?.status === "pending" ? (
-                      <select
-                        onChange={(e) =>
-                          changeBookingStatus(booking._id, e.target.value)
-                        }
-                        value={booking?.status}
-                        disabled={savingId === booking._id}
-                        className="px-2 py-1.5 mt-1 text-[var(--color-text-secondary)] border border-[var(--color-borderColor)] rounded-md outline-none"
-                      >
-                        {BOOKING_STATUS_OPTIONS.map((s) => (
-                          <option key={s} value={s}>
-                            {s.charAt(0).toUpperCase() + s.slice(1)}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          booking?.status === "confirmed"
-                            ? "bg-[var(--color-success)]/15 text-[var(--color-success)]"
-                            : "bg-[var(--color-error)]/15 text-[var(--color-error)]"
-                        }`}
-                      >
-                        {booking?.status}
+                    {/* Static channel badge (hidden on small screens) */}
+                    <td className="p-3 max-md:hidden">
+                      <span className="bg-[var(--color-light)] px-3 py-1 rounded-full text-xs">
+                        offline
                       </span>
-                    )}
+                    </td>
+
+                    {/* Actions / Status control */}
+                    <td className="p-3">
+                      {booking?.status === "pending" ? (
+                        <select
+                          onChange={(e) =>
+                            changeBookingStatus(booking._id, e.target.value)
+                          }
+                          value={booking?.status}
+                          disabled={savingId === booking._id}
+                          className="px-2 py-1.5 mt-1 text-[var(--color-text-secondary)] border border-[var(--color-borderColor)] rounded-md outline-none"
+                        >
+                          {BOOKING_STATUS_OPTIONS.map((s) => (
+                            <option key={s} value={s}>
+                              {s.charAt(0).toUpperCase() + s.slice(1)}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            booking?.status === "confirmed"
+                              ? "bg-[var(--color-success)]/15 text-[var(--color-success)]"
+                              : "bg-[var(--color-error)]/15 text-[var(--color-error)]"
+                          }`}
+                        >
+                          {booking?.status}
+                        </span>
+                      )}
+                    </td>
+                  </motion.tr>
+                );
+              })}
+
+              {!bookings?.length && (
+                <tr>
+                  <td className="p-4 text-center" colSpan={5}>
+                    No bookings found.
                   </td>
                 </tr>
-              );
-            })}
-
-            {!bookings?.length && (
-              <tr>
-                <td className="p-4 text-center" colSpan={5}>
-                  {loading ? "Loading bookings..." : "No bookings found."}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+              )}
+            </tbody>
+          </table>
+        </motion.div>
+      )}
+    </motion.div>
   );
 };
 

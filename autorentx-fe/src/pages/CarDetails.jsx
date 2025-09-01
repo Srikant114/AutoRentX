@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { assets, dummyCarData } from "../assets/assets";
+import { assets } from "../assets/assets";
 import Loader from "../components/Loader";
 import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
+import { motion } from "framer-motion";
 
 const CarDetails = () => {
   const { id } = useParams();
-  const {cars, axios, pickupDate, setPickupDate, returnDate, setReturnDate, currency} = useAppContext()
+  const { cars, axios, pickupDate, setPickupDate, returnDate, setReturnDate, currency } = useAppContext();
 
   const navigate = useNavigate();
   const [carData, setCarData] = useState(null);
 
-    /* ------------------ Submit Booking ------------------ */
+  /* ------------------ Submit Booking ------------------ */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -50,15 +51,20 @@ const CarDetails = () => {
     setCarData(cars?.find((car) => car?._id === id));
   }, [cars, id]);
 
-  // If no data, show loader
   if (!carData) return <Loader />;
 
   return (
-    <div className="px-6 md:px-16 lg:px-24 xl:px-32 mt-16">
+    <motion.div
+      className="px-6 md:px-16 lg:px-24 xl:px-32 mt-16"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
       {/* Go Back Button */}
-      <button
+      <motion.button
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 mb-6 text-text-secondary hover:underline"
+        whileHover={{ x: -4 }}
       >
         <img
           src={assets?.arrow_icon}
@@ -66,20 +72,28 @@ const CarDetails = () => {
           className="rotate-180 opacity-65"
         />
         Back to all cars
-      </button>
+      </motion.button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
         {/* LEFT: Car Image & Info */}
         <div className="lg:col-span-2">
           {/* Car Image */}
-          <img
+          <motion.img
             src={carData?.image}
             alt="car"
             className="w-full h-auto md:max-h-100 object-cover rounded-xl mb-6 shadow-md"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
           />
 
           {/* Car Details Section */}
-          <div className="space-y-6">
+          <motion.div
+            className="space-y-6"
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
             {/* Title */}
             <div>
               <h1 className="text-3xl font-bold">
@@ -103,13 +117,14 @@ const CarDetails = () => {
                 { icon: assets?.car_icon, text: carData?.transmission },
                 { icon: assets?.location_icon, text: carData?.location },
               ].map(({ icon, text }) => (
-                <div
+                <motion.div
                   key={text}
                   className="flex flex-col items-center bg-light p-4 rounded-lg"
+                  whileHover={{ scale: 1.05 }}
                 >
                   <img src={icon} alt={text} className="h-5 mb-2" />
                   <span className="text-sm text-text-secondary">{text}</span>
-                </div>
+                </motion.div>
               ))}
             </div>
 
@@ -129,10 +144,13 @@ const CarDetails = () => {
                   "GPS Navigation",
                   "Heated Seats",
                   "Rear View Mirror",
-                ].map((item) => (
-                  <li
+                ].map((item, i) => (
+                  <motion.li
                     key={item}
                     className="flex items-center text-text-secondary"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + i * 0.1 }}
                   >
                     <img
                       src={assets?.check_icon}
@@ -140,17 +158,20 @@ const CarDetails = () => {
                       className="h-4 mr-2"
                     />
                     {item}
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* RIGHT: Booking Form */}
-        <form
+        <motion.form
           onSubmit={handleSubmit}
           className="shadow-lg h-max sticky top-18 rounded-xl p-6 space-y-6 text-text-secondary border border-borderColor bg-white"
+          initial={{ x: 60, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
         >
           {/* Price Display */}
           <p className="flex items-center justify-between text-2xl text-gray-800 font-semibold">
@@ -168,7 +189,7 @@ const CarDetails = () => {
             <label htmlFor="pickup-date">Pickup Date</label>
             <input
               value={pickupDate}
-              onChange={(e)=>setPickupDate(e.target.value)}
+              onChange={(e) => setPickupDate(e.target.value)}
               type="date"
               id="pickup-date"
               required
@@ -182,7 +203,7 @@ const CarDetails = () => {
             <label htmlFor="return-date">Return Date</label>
             <input
               value={returnDate}
-              onChange={(e)=>setReturnDate(e.target.value)}
+              onChange={(e) => setReturnDate(e.target.value)}
               type="date"
               id="return-date"
               required
@@ -191,20 +212,22 @@ const CarDetails = () => {
           </div>
 
           {/* Submit Button */}
-          <button
+          <motion.button
             type="submit"
             className="w-full bg-primary hover:bg-primary-dull transition-all py-3 font-medium text-white rounded-xl cursor-pointer"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             Book Now
-          </button>
+          </motion.button>
 
           {/* Note */}
           <p className="text-center text-sm text-text-secondary">
             No credit card required to reserve
           </p>
-        </form>
+        </motion.form>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
