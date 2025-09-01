@@ -2,89 +2,109 @@
 import Booking from "../models/Booking.js";
 import Car from "../models/Car.js";
 
+// In carController.js
+export const getAvailableLocations = async (req, res) => {
+  try {
+    const locations = await Car.distinct('location', { isAvailable: true });
+    res.status(200).json({
+      success: true,
+      locations: locations.sort()
+    });
+  } catch (error) {
+    console.log("GetLocations Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
+  }
+};
+
 /* ================================
    Helper: checkAvailability
    Returns true if no overlapping bookings exist
    ================================ */
 export const checkAvailability = async (carId, pickupDate, returnDate) => {
-    const from = new Date(pickupDate);
-    const to = new Date(returnDate);
+  // Any overlap: existing.pickupDate < returnDate AND existing.returnDate > pickupDate
+  const overlap = await Booking.exists({
+    car: carId,
+    pickupDate: { $lt: returnDate },
+    returnDate: { $gt: pickupDate },
+  });
 
-    // Any overlap: existing.pickupDate < to AND existing.returnDate > from
-    const overlap = await Booking.exists({
-        car: carId,
-        pickupDate: { $lt: to },
-        returnDate: { $gt: from },
-    });
-
-    return !overlap; // true means available
+  return !overlap; // true means available
 };
-
 /* ================================
    Check availability of cars for a location & date range
    ================================ */
 export const checkAvailabilityOfCar = async (req, res) => {
-    try {
-        const { location, pickupDate, returnDate } = req.body || {};
+  try {
+    const { location, pickupDate, returnDate } = req.body || {};
 
-        // Basic validation
-        if (!location || !pickupDate || !returnDate) {
-            return res.status(400).json({
-                success: false,
-                message: "location, pickupDate, and returnDate are required.",
-            });
-        }
-
-        const from = new Date(pickupDate);
-        const to = new Date(returnDate);
-        if (isNaN(from) || isNaN(to) || from >= to) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid date range provided.",
-            });
-        }
-
-        // Fetch cars in location that are marked available
-        const cars = await Car.find({ location, isAvailable: true }).lean();
-
-        if (!cars.length) {
-            return res.status(200).json({
-                success: true,
-                message: `No cars found in ${location}.`,
-                availableCars: [],
-            });
-        }
-
-        // Check each car for date overlap
-        const checks = cars.map(async (car) => {
-            const isAvailable = await checkAvailability(car._id, from, to);
-            return isAvailable ? car : null;
-        });
-
-        const results = await Promise.all(checks);
-        const availableCars = results.filter(Boolean);
-
-        if (!availableCars.length) {
-            return res.status(200).json({
-                success: true,
-                message: `No cars available in ${location} for the given dates.`,
-                availableCars: [],
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: `${availableCars.length} car(s) available in ${location} for the selected dates.`,
-            count: availableCars.length,
-            availableCars,
-        });
-    } catch (error) {
-        console.log("CheckAvailability Error:", error.message);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error. Please try again later.",
-        });
+    // Basic validation
+    if (!location || !pickupDate || !returnDate) {
+      return res.status(400).json({
+        success: false,
+        message: "location, pickupDate, and returnDate are required.",
+      });
     }
+
+    // Convert dd/mm/yyyy to Date object
+    const convertToDate = (dateStr) => {
+      const [day, month, year] = dateStr.split('/');
+      return new Date(`${year}-${month}-${day}`);
+    };
+
+    const from = convertToDate(pickupDate);
+    const to = convertToDate(returnDate);
+    
+    if (isNaN(from) || isNaN(to) || from >= to) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid date range provided.",
+      });
+    }
+
+    // Fetch cars in location that are marked available
+    const cars = await Car.find({ location, isAvailable: true }).lean();
+
+    if (!cars.length) {
+      return res.status(200).json({
+        success: true,
+        message: `No cars found in ${location}.`,
+        availableCars: [],
+      });
+    }
+
+    // Check each car for date overlap
+    const checks = cars.map(async (car) => {
+      const isAvailable = await checkAvailability(car._id, from, to);
+      return isAvailable ? car : null;
+    });
+
+    const results = await Promise.all(checks);
+    const availableCars = results.filter(Boolean);
+
+    if (!availableCars.length) {
+      return res.status(200).json({
+        success: true,
+        message: `No cars available in ${location} for the given dates.`,
+        availableCars: [],
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `${availableCars.length} car(s) available in ${location} for the selected dates.`,
+      count: availableCars.length,
+      availableCars,
+    });
+  } catch (error) {
+    console.log("CheckAvailability Error:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error. Please try again later.",
+    });
+  }
 };
 
 /* ================================
